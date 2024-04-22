@@ -22,9 +22,10 @@ if 'selected_option' not in st.session_state:
 #----------------------------------------------------------
 
 def generate_question(prompt):
-    url = f'{host_api}/{main_engine}/{instance_id}/invoke'
+    url = f'{host_api}/{main_engine}/{instance_id}/soal-pppk/batch'
+    # "https://langchain-api-production.up.railway.app/vertex-ai/{instance_id}/soal-pppk/batch"
     json_data = {
-        "input": prompt,
+        "inputs": [prompt],
         "config": {},
         "kwargs": {}
     }
@@ -32,7 +33,7 @@ def generate_question(prompt):
         "Content-Type": "application/json",
         "Authorization": f"Bearer {tokens}"
     })
-    print(url)
+    print(response.text)
     if response.status_code == 200:
         return response
 
@@ -182,56 +183,57 @@ def main_app():
                         try:
                             res_data = json.loads(res.text)
                             output_data = res_data.get('output')
-                            
-                            if output_data:
-                                if output_data is not None:
-                                    
-                                    st.write("**Soal**")
-                                    st.write(output_data['question'])
-                                    
-                                    answer_text = []
-                                    for answer in output_data['answers']:
-                                        answer_text.append(f"{answer['answer']} - {answer['score']}")
-                                    
-                                    answer_option = st.radio(
-                                        "Pilihan",
-                                        answer_text,
-                                        disabled=True,
-                                        index=None
-                                    )
-                                    st.write("**Pembahasan**")
-                                    st.write(output_data['explanation'])
-                                    
-                                    print(json.dumps(output_data))
-                                    print('-'*150)
-                                    
-                                    
-                                    output_structure = {
-                                        "jenis": selected_jenis,
-                                        "jabatan": selected_jabatan,
-                                        "kategori": selected_kategori,
-                                        "bidang": selected_bidang,
-                                        "sub": selected_sub,
-                                        "bloom": selected_bloom,
-                                        "studi_kasus": selected_creative,
-                                        "question": output_data['question'],
-                                        "option_a_text": output_data['answers'][0]['answer'],
-                                        "option_a_value": output_data['answers'][0]['score'],
-                                        "option_b_text": output_data['answers'][1]['answer'],
-                                        "option_b_value": output_data['answers'][1]['score'],
-                                        "option_c_text": output_data['answers'][2]['answer'],
-                                        "option_c_value": output_data['answers'][2]['score'],
-                                        "option_d_text": output_data['answers'][3]['answer'],
-                                        "option_d_value": output_data['answers'][3]['score'],
-                                        "option_e_text": output_data['answers'][4]['answer'],
-                                        "option_e_value": output_data['answers'][4]['score'],
-                                        "explanation": output_data['explanation']
-                                    }
-                                    break
-                                else:
-                                    print(json.dumps(output_data))
-                                    print('-'*150)
-                                    st.write("Failed to generate question. Retry...")
+                            for question_data in output_data:
+                                
+                                if question_data:
+                                    if question_data is not None:
+                                        
+                                        st.write("**Soal**")
+                                        st.write(question_data['question'])
+                                        
+                                        answer_text = []
+                                        for answer in question_data['answers']:
+                                            answer_text.append(f"{answer['answer']} - {answer['score']}")
+                                        
+                                        answer_option = st.radio(
+                                            "Pilihan",
+                                            answer_text,
+                                            disabled=True,
+                                            index=None
+                                        )
+                                        st.write("**Pembahasan**")
+                                        st.write(question_data['explanation'], divider='green')
+                                        
+                                        print(json.dumps(question_data))
+                                        print('-'*150)
+                                        
+                                        
+                                        # output_structure = {
+                                        #     "jenis": selected_jenis,
+                                        #     "jabatan": selected_jabatan,
+                                        #     "kategori": selected_kategori,
+                                        #     "bidang": selected_bidang,
+                                        #     "sub": selected_sub,
+                                        #     "bloom": selected_bloom,
+                                        #     "studi_kasus": selected_creative,
+                                        #     "question": output_data['question'],
+                                        #     "option_a_text": output_data['answers'][0]['answer'],
+                                        #     "option_a_value": output_data['answers'][0]['score'],
+                                        #     "option_b_text": output_data['answers'][1]['answer'],
+                                        #     "option_b_value": output_data['answers'][1]['score'],
+                                        #     "option_c_text": output_data['answers'][2]['answer'],
+                                        #     "option_c_value": output_data['answers'][2]['score'],
+                                        #     "option_d_text": output_data['answers'][3]['answer'],
+                                        #     "option_d_value": output_data['answers'][3]['score'],
+                                        #     "option_e_text": output_data['answers'][4]['answer'],
+                                        #     "option_e_value": output_data['answers'][4]['score'],
+                                        #     "explanation": output_data['explanation']
+                                        # }
+                                        break
+                                    else:
+                                        print(json.dumps(output_data))
+                                        print('-'*150)
+                                        st.write("Failed to generate question. Retry...")
                         except json.JSONDecodeError:
                             print(json.dumps(output_data))
                             print('-'*150)
