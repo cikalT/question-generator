@@ -1,5 +1,6 @@
 import json
 import time
+import random
 import requests
 import pandas as pd
 import streamlit as st
@@ -21,11 +22,11 @@ if 'selected_option' not in st.session_state:
     
 #----------------------------------------------------------
 
-def generate_question(prompt):
+def generate_question(prompts):
     url = f'{host_api}/{main_engine}/{instance_id}/soal-pppk/batch'
     # "https://langchain-api-production.up.railway.app/vertex-ai/{instance_id}/soal-pppk/batch"
     json_data = {
-        "inputs": [prompt],
+        "inputs": prompts,
         "config": {},
         "kwargs": {}
     }
@@ -40,6 +41,7 @@ def generate_question(prompt):
 
 def main_app():
     generated_list = []
+    prompt_list = []
 
     list_jenis = []
     list_jabatan = []
@@ -52,7 +54,7 @@ def main_app():
     selected_kategori = None
     selected_bidang = None
     selected_sub = None
-    selected_bloom = None
+    # selected_bloom = None
     selected_creative = None
     #----------------------------------------------------------
     for jenis in data:
@@ -133,118 +135,88 @@ def main_app():
         st.session_state["selected_sub"] = sub_option
         selected_sub = sub_option
     #----------------------------------------------------------
-    if selected_sub is not None:
-        bloom_option = st.selectbox(
-            "Bloom",
-            [
-                "Mengingat (C1)",
-                "Memahami (C2)",
-                "Menerapkan (C3)",
-                "Menganalisis (C4)",
-                "Mengevaluasi (C5)",
-                "Menciptakan (C6)"
-            ],
-            index=None,
-            placeholder="Pilh Level Bloom"
-        )
-        st.session_state["select_bloom"] = bloom_option
-        selected_bloom = bloom_option
+    original_list = [
+        "Mengingat (C1)",
+        "Memahami (C2)",
+        "Menerapkan (C3)",
+        "Menganalisis (C4)",
+        "Mengevaluasi (C5)"
+    ]
+    # if selected_sub is not None:
+        # bloom_option = st.selectbox(
+        #     "Bloom",
+            # [
+            #     "Mengingat (C1)",
+            #     "Memahami (C2)",
+            #     "Menerapkan (C3)",
+            #     "Menganalisis (C4)",
+            #     "Mengevaluasi (C5)",
+            #     "Menciptakan (C6)"
+            # ],
+        #     index=None,
+        #     placeholder="Pilh Level Bloom"
+        # )
+        # st.session_state["select_bloom"] = bloom_option
+        # selected_bloom = bloom_option
     #----------------------------------------------------------
-    if selected_bloom is not None:
-        creative_option = st.radio(
-            "Studi Kasus",
-            ["Iya", "Tidak"],
-            index=1
-        )
+    # if selected_sub is not None:
+    #     creative_option = st.radio(
+    #         "Studi Kasus",
+    #         ["Iya", "Tidak"],
+    #         index=1
+    #     )
         
-        st.session_state["selected_creative"] = creative_option
-        selected_creative = creative_option
+    #     st.session_state["selected_creative"] = creative_option
+    #     selected_creative = creative_option
     #----------------------------------------------------------
-    if selected_creative is not None:
+    question_length = st.number_input("Insert a number", value=None, placeholder="Type a number...")
+    #----------------------------------------------------------
+    if selected_sub is not None and question_length != 0:
         if st.button(":robot_face: Generate Soal :robot_face:"):
-            if st.session_state["selected_sub"] != None:
-                
-                generated_question = None
-                
-                if selected_creative == "Iya":
-                    add_ons = " Buat soal menggunakan studi kasus nyata tanpa mempertanyakan secara langsung bloom yang ditanyakan."
-                else:
-                    add_ons = ""
-                
-                prompt = f"""Saya akan membuat soal {selected_jenis} untuk jabatan {selected_jabatan}. Soal yang dibuat harus terstruktur secara lengkap dan jelas. Soal tersebut disusun berdasarkan kemampuan {selected_kategori} pada bidang {selected_bidang}. Buatlah soal tentang {selected_sub} yang setara dengan Level Bloom {selected_bloom} tetapi sebagai pengecoh jangan gunakan kata yang sama dengan level bloom yang digunakan pada soal, termasuk tidak mengandung kata-kata level bloom. Soal tidak boleh mengandung kata-kata "{selected_bidang}" atau "{selected_sub}" di dalamnya.{add_ons}"""
-                
-                st.write(f"**{json.dumps(prompt, indent=4)}**")
-                
-                while True:
+            new_list = random.choices(original_list, k=round(question_length))
+            
+            for item in new_list:
+                prompt = f"""Saya akan membuat soal {selected_jenis} untuk jabatan {selected_jabatan}. Soal yang dibuat harus terstruktur secara lengkap dan jelas. Soal tersebut disusun berdasarkan kemampuan {selected_kategori} pada bidang {selected_bidang}. Buatlah soal tentang {selected_sub} yang setara dengan Level Bloom {item} tetapi sebagai pengecoh jangan gunakan kata yang sama dengan level bloom yang digunakan pada soal, termasuk tidak mengandung kata-kata level bloom. Soal tidak boleh mengandung kata-kata "{selected_bidang}" atau "{selected_sub}" di dalamnya. Buat soal menggunakan studi kasus nyata tanpa mempertanyakan secara langsung bloom yang ditanyakan."""
+                prompt_list.append(prompt)
+            
+            res = generate_question(prompt_list)
+            
+            if res.status_code == 200:
+                try:
+                    res_data = json.loads(res.text)
+                    output_data = res_data.get('output')
                     
-                    res = generate_question(prompt)
-                    
-                    if res.status_code == 200:
-                        try:
-                            res_data = json.loads(res.text)
-                            output_data = res_data.get('output')
-                            for question_data in output_data:
-                                
-                                if question_data:
-                                    if question_data is not None:
-                                        
-                                        st.write("**Soal**")
-                                        st.write(question_data['question'])
-                                        
-                                        answer_text = []
-                                        for answer in question_data['answers']:
-                                            answer_text.append(f"{answer['answer']} - {answer['score']}")
-                                        
-                                        answer_option = st.radio(
-                                            "Pilihan",
-                                            answer_text,
-                                            disabled=True,
-                                            index=None
-                                        )
-                                        st.write("**Pembahasan**")
-                                        st.write(question_data['explanation'], divider='green')
-                                        
-                                        print(json.dumps(question_data))
-                                        print('-'*150)
-                                        
-                                        
-                                        # output_structure = {
-                                        #     "jenis": selected_jenis,
-                                        #     "jabatan": selected_jabatan,
-                                        #     "kategori": selected_kategori,
-                                        #     "bidang": selected_bidang,
-                                        #     "sub": selected_sub,
-                                        #     "bloom": selected_bloom,
-                                        #     "studi_kasus": selected_creative,
-                                        #     "question": output_data['question'],
-                                        #     "option_a_text": output_data['answers'][0]['answer'],
-                                        #     "option_a_value": output_data['answers'][0]['score'],
-                                        #     "option_b_text": output_data['answers'][1]['answer'],
-                                        #     "option_b_value": output_data['answers'][1]['score'],
-                                        #     "option_c_text": output_data['answers'][2]['answer'],
-                                        #     "option_c_value": output_data['answers'][2]['score'],
-                                        #     "option_d_text": output_data['answers'][3]['answer'],
-                                        #     "option_d_value": output_data['answers'][3]['score'],
-                                        #     "option_e_text": output_data['answers'][4]['answer'],
-                                        #     "option_e_value": output_data['answers'][4]['score'],
-                                        #     "explanation": output_data['explanation']
-                                        # }
-                                        break
-                                    else:
-                                        print(json.dumps(output_data))
-                                        print('-'*150)
-                                        st.write("Failed to generate question. Retry...")
-                        except json.JSONDecodeError:
-                            print(json.dumps(output_data))
-                            print('-'*150)
-                            st.write("Failed to decode JSON. Retry...")
+                    for question_data in output_data:
+                        st.write("**Soal**")
+                        st.write(question_data['question'])
+                        
+                        answer_text = []
+                        for answer in question_data['answers']:
+                            answer_text.append(f"{answer['answer']} - {answer['score']}")
+                        
+                        answer_option = st.radio(
+                            "Pilihan",
+                            answer_text,
+                            disabled=True,
+                            index=None
+                        )
+                        st.write("**Pembahasan**")
+                        st.write(question_data['explanation'])
                     else:
                         print(json.dumps(output_data))
                         print('-'*150)
-                        st.write(f"Failed with status code: {res.status_code}. Retry...")
-                    
-                    time.sleep(1)
-    
+                        st.write("Failed to generate question. Retry...")
+                except json.JSONDecodeError:
+                    print(json.dumps(output_data))
+                    print('-'*150)
+                    st.write("Failed to decode JSON. Retry...")
+            else:
+                print(json.dumps(output_data))
+                print('-'*150)
+                st.write(f"Failed with status code: {res.status_code}. Retry...")
+            
+            time.sleep(1)
+
 
 st.set_page_config(layout="wide")
 if "password_entered" not in st.session_state:
