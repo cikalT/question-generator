@@ -1,3 +1,5 @@
 .conda
 secrets.toml
 .DS_Store
+.csv
+converter.py
