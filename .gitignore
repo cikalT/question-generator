@@ -1,5 +1,6 @@
 .conda
 secrets.toml
 .DS_Store
-.csv
+*.csv
 converter.py
+materi_p3k_teknis.json

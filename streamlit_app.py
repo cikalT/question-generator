@@ -62,10 +62,10 @@ def main_app():
     list_jenis = list(set(list_jenis))
 
     jenis_option = st.selectbox(
-        "Jenis Materi",
+        "Tipe Modul",
         list_jenis,
         index=None,
-        placeholder="Pilih Jenis Materi"
+        placeholder="Pilih Tipe Modul"
     )
 
     st.session_state["selected_jenis"] = jenis_option
@@ -110,10 +110,10 @@ def main_app():
         list_bidang = list(set(list_bidang))
 
         bidang_option = st.selectbox(
-            "Jenis Bidang",
+            "Jenis Sub Kategori",
             list_bidang,
             index=None,
-            placeholder="Pilih Jenis Bidang"
+            placeholder="Pilih Sub Kategori"
         )
 
         st.session_state["selected_bidang"] = bidang_option
@@ -126,10 +126,10 @@ def main_app():
         list_sub = list(set(list_sub))
 
         sub_option = st.selectbox(
-            "Jenis Sub",
+            "Jenis Materi",
             list_sub,
             index=None,
-            placeholder="Pilih Sub"
+            placeholder="Pilih Materi"
         )
 
         st.session_state["selected_sub"] = sub_option
@@ -169,14 +169,14 @@ def main_app():
     #     st.session_state["selected_creative"] = creative_option
     #     selected_creative = creative_option
     #----------------------------------------------------------
-    question_length = st.number_input("Insert a number", value=None, placeholder="Type a number...")
+    question_length = st.number_input("Jumlah Soal", value=None, placeholder="Masukkan jumlah soal")
     #----------------------------------------------------------
     if selected_sub is not None and question_length != 0:
         if st.button(":robot_face: Generate Soal :robot_face:"):
             new_list = random.choices(original_list, k=round(question_length))
             
             for item in new_list:
-                prompt = f"""Saya akan membuat soal {selected_jenis} untuk jabatan {selected_jabatan}. Soal yang dibuat harus terstruktur secara lengkap dan jelas. Soal tersebut disusun berdasarkan kemampuan {selected_kategori} pada bidang {selected_bidang}. Buatlah soal tentang {selected_sub} yang setara dengan Level Bloom {item} tetapi sebagai pengecoh jangan gunakan kata yang sama dengan level bloom yang digunakan pada soal, termasuk tidak mengandung kata-kata level bloom. Soal tidak boleh mengandung kata-kata "{selected_bidang}" atau "{selected_sub}" di dalamnya. Buat soal menggunakan studi kasus nyata tanpa mempertanyakan secara langsung bloom yang ditanyakan."""
+                prompt = f"""Saya akan membuat soal {selected_jenis} untuk jabatan {selected_jabatan}. Soal yang dibuat harus terstruktur secara lengkap dan jelas. Soal tersebut disusun berdasarkan kemampuan {selected_kategori} pada bidang {selected_bidang}. Buatlah soal tentang {selected_sub} yang setara dengan Level Bloom {item} tetapi sebagai pengecoh jangan gunakan kata yang sama dengan level bloom yang digunakan pada soal, termasuk tidak mengandung kata-kata level bloom. Soal tidak boleh mengandung kata-kata "{selected_bidang}" atau "{selected_sub}" di dalamnya. Buat soal menggunakan studi kasus nyata tanpa mempertanyakan secara langsung bloom yang ditanyakan dengan memprioritaskan segi praktek lapangan sebagai abdi negara di bidang tersebut"""
                 prompt_list.append(prompt)
             
             res = generate_question(prompt_list)
